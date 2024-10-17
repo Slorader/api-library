@@ -1,40 +1,73 @@
-import { User } from "../models/user.model"; // Modèle Sequelize
-import jwt from "jsonwebtoken"; // Pour générer le JWT
-import { Buffer } from "buffer"; // Pour décoder Base64
+import jwt from "jsonwebtoken";
 import { notFound } from "../error/NotFoundError";
+import { User } from "../models/user.model";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key"; // Clé secrète pour signer le token
+const JWT_SECRET = "my_secret_password";
 
-export class AuthenticationService {
-  public async authenticate(
-    username: string,
-    password: string
-  ): Promise<string> {
-    // Recherche l'utilisateur dans la base de données
-    const user = await User.findOne({ where: { username } });
+export class AuthentificationService {
+  public async authenticate(username: string, password: string): Promise<string> {
+    const user = await User.findOne({ where: { username: username } });
 
     if (!user) {
-      throw notFound("User");
+      throw notFound("User not found");
     }
 
-    // Décoder le mot de passe stocké en base de données
-    const decodedPassword = Buffer.from(user.password, "base64").toString(
-      "utf-8"
-    );
+    // Décoder le mot de passe de l'utilisateur
+    const decodedPassword = Buffer.from(user.password, 'base64').toString('utf-8');
 
-    // Vérifie si le mot de passe est correct
     if (password === decodedPassword) {
-      // Si l'utilisateur est authentifié, on génère un JWT
-      const token = jwt.sign({ username: user.username }, JWT_SECRET, {
+      const scopes = this.getScopes(username);
+      const token = jwt.sign({ username: user.username, scopes }, JWT_SECRET, {
         expiresIn: "1h",
       });
       return token;
     } else {
-      let error = new Error("Wrong password");
+      let error = new Error("Invalid password");
       (error as any).status = 403;
       throw error;
     }
   }
+
+  private getScopes(username: string): string[] {
+    switch (username) {
+      case 'admin':
+        return [
+          'author:read',
+          'author:create',
+          'author:delete',
+          'author:write',
+          'book:read',
+          'book:create',
+          'book:delete',
+          'book:write',
+          'bookCollection:read',
+          'bookCollection:create',
+          'bookCollection:delete',
+          'bookCollection:write',
+        ];
+      case 'gerant':
+        return [
+          'author:read',
+          'author:create',
+          'author:write',
+          'book:read',
+          'book:create',
+          'book:write',
+          'bookCollection:read',
+          'bookCollection:create',
+          'bookCollection:write',
+          'bookCollection:delete',
+        ];
+      case 'utilisateur':
+        return [
+          'book:read',
+          'author:read',
+          'bookCollection:read',
+        ];
+      default:
+        return [];
+    }
+  }
 }
 
-export const authService = new AuthenticationService();
+export const authService = new AuthentificationService();

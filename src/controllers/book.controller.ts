@@ -6,7 +6,7 @@ import {
   Patch,
   Path,
   Post,
-  Route,
+  Route, Security,
   Tags,
 } from "tsoa";
 import {
@@ -17,20 +17,23 @@ import {
 import { bookService } from "../services/book.service";
 import { BookCollectionOutputDTO } from "../dto/bookCollection.dto";
 
-@Route("books")
-@Tags("Books")
+@Get("/")
+@Security("jwt")
 export class BookController extends Controller {
   @Get("/")
+  @Security("jwt", ["book:read"])
   public async getAllBooks(): Promise<BookOutputDTO[]> {
     return bookService.getAllBooks();
   }
 
   @Get("{id}")
+  @Security("jwt", ["book:read"])
   public async getBook(@Path("id") id: number): Promise<BookOutputDTO> {
     return await bookService.getBookById(id);
   }
 
   @Post("/")
+  @Security("jwt", ["book:create"])
   public async postBooks(
     @Body() requestBody: BookInputDTO,
   ): Promise<BookOutputDTO> {
@@ -57,11 +60,13 @@ export class BookController extends Controller {
   }
 
   @Delete("{id}")
+  @Security("jwt", ["book:delete"])
   public async deleteBook(@Path("id") id: number): Promise<void> {
     await bookService.deleteBook(id);
   }
 
   @Get("{id}/book-collections")
+  @Security("jwt", ["book:write"])
   public async getBookCollectionsByBookId(
     @Path() id: number,
   ): Promise<BookCollectionOutputDTO[]> {

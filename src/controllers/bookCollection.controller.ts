@@ -6,7 +6,7 @@ import {
   Patch,
   Path,
   Post,
-  Route,
+  Route, Security,
   Tags,
 } from "tsoa";
 import {
@@ -19,11 +19,13 @@ import { bookCollectionService } from "../services/bookCollection.service";
 @Tags("BookCollections")
 export class BookCollectionController extends Controller {
   @Get("/")
+  @Security("jwt", ["bookCollection:read"])
   public async getAllBooksCollection(): Promise<BookCollectionOutputDTO[]> {
     return bookCollectionService.getAllBookCollections();
   }
 
   @Get("{id}")
+  @Security("jwt", ["bookCollection:read"])
   public async getBookCollection(
     @Path("id") id: number,
   ): Promise<BookCollectionOutputDTO> {
@@ -31,6 +33,7 @@ export class BookCollectionController extends Controller {
   }
 
   @Post("/")
+  @Security("jwt", ["bookCollection:create"])
   public async postBookCollection(
     @Body() requestBody: BookCollectionInputDTO,
   ): Promise<BookCollectionOutputDTO> {
@@ -44,6 +47,7 @@ export class BookCollectionController extends Controller {
   @Patch("{id}")
   public async patchBookCollection(
     @Path("id") id: number,
+    @Security("jwt", ["bookCollection:write"])
     @Body() requestBody: BookCollectionInputPatchDTO,
   ): Promise<BookCollectionOutputDTO> {
     return bookCollectionService.updateBookCollection(
